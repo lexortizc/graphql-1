@@ -1,64 +1,16 @@
-import { useState } from 'react'
-import {
-  Typography,
-  Container,
-  List,
-  Box,
-  MenuItem,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Dialog
-} from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import { gql, useQuery, useLazyQuery } from '@apollo/client'
-
-const COUNTRIES = gql`
-  query Countries {
-    countries {
-      code
-      name
-      phone
-      languages {
-        code
-        name
-        native
-      }
-      currency
-      emoji
-      emojiU
-      states {
-        name
-        code
-      }
-    }
-  }
-`
-
-const COUNTRY = gql`
-  query Country($code: String!) {
-    country(code: $code) {
-      code
-      name
-      phone
-      languages {
-        code
-        name
-        native
-      }
-      currency
-      emoji
-      emojiU
-      states {
-        name
-        code
-      }
-    }
-  }
-`
+import { useQuery } from '@apollo/client'
+import { useSelector } from 'react-redux';
+import { CountryDetailsModal, CustomListItem, FavoriteBox } from './components';
+import { Typography, Container, List, Box } from '@mui/material'
+import { Link } from 'react-router-dom';
+import { useModal } from './hooks/useModal';
+import { ApolloQueries } from './data/apolloConstants';
 
 const Countries = () => {
-  const { loading, error, data, refetch } = useQuery(COUNTRIES)
+  const state = useSelector((state) => state.favorites)
+  const { isOpen, selectedItem, handleModal } = useModal()
+
+  const { loading, error, data } = useQuery(ApolloQueries.GET_COUNTRIES)
   if (loading) return <>loading...</>
   if (error) return <>error...</>
 
@@ -79,24 +31,27 @@ const Countries = () => {
         <Box sx={{ textAlign: 'center', padding: '.5rem' }}>
           {countriesWithStates.length} Countries with states
         </Box>
-        {countries.map(country => (
-          <Box
-            key={country.code}
-            sx={{
-              padding: '.5rem 0rem',
-              color: country.states.length > 0 ? 'blue' : '#999'
-            }}
-          >
-            <a href='#'>
-              {country.emoji} {country.name}{' '}
-              {country.states.length > 0 && country.states.length}{' '}
-              {country.states.length > 1 && 'States'}
-              {country.states.length === 1 && 'State'}
-            </a>
-          </Box>
-        ))}
+        <FavoriteBox totalFav={ Object.keys(state.countries).length } />
+        <List>
+          {countries.map((country) => (
+            <CustomListItem
+              key={ country.code }
+              item={ country }
+              type="countries"
+              isStared={ (state['countries'][country.code]) ? true : false }
+            >
+              <Link to='#' onClick={ () => handleModal(country, true) }>
+                {country.emoji} {country.name}{' '}
+                {country.states.length > 0 && country.states.length}{' '}
+                {country.states.length > 1 && 'States'}
+                {country.states.length === 1 && 'State'}
+              </Link>
+            </CustomListItem>
+          ))}
+        </List>
       </Box>
 
+      <CountryDetailsModal country={ selectedItem } isOpen={ isOpen } handleModal={ handleModal } />
     </Container>
   )
 }

@@ -1,26 +1,12 @@
-import {
-  Box,
-  Container,
-  Typography,
-  List,
-  ListItem
-} from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import { gql, useQuery } from '@apollo/client'
-
-const LANGUAGES = gql`
-  query Languages {
-    languages {
-      code
-      name
-      native
-      rtl
-    }
-  }
-`
+import { useQuery } from '@apollo/client'
+import { useSelector } from 'react-redux';
+import { CustomListItem, FavoriteBox } from './components';
+import { Box , Container, List, Typography } from '@mui/material'
+import { ApolloQueries } from './data/apolloConstants';
 
 const Languages = () => {
-  const { loading, error, data, refetch } = useQuery(LANGUAGES)
+  const { languages:staredLanguages } = useSelector((state) => state.favorites)
+  const { loading, error, data } = useQuery(ApolloQueries.GET_LANGUAGES)
 
   if (loading) return <>loading...</>
   if (error) return <>error...</>
@@ -35,12 +21,17 @@ const Languages = () => {
       <Box sx={{ textAlign: 'center', padding: '.5rem' }}>
         {languages.length} Languages
       </Box>
+      <FavoriteBox totalFav={ Object.keys(staredLanguages).length } />
 
       <List>
-        {languages.map(lang => (
-          <ListItem key={lang.code}>
-            {lang.code} - {lang.name} - {lang.native}
-          </ListItem>
+        {languages.map((language) => (
+          <CustomListItem
+            key={ language.code }
+            item={ language }
+            type="languages"
+            isStared={ (staredLanguages[language.code]) ? true : false }
+            text={ `${language.code} - ${language.name}` }
+          />
         ))}
       </List>
     </Container>
